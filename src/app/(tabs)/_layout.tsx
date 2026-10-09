@@ -1,10 +1,10 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, type ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../components/ui';
 
-function TabIcon({ symbol, color }: { symbol: string; color: string }) {
+function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
   return <Text accessibilityElementsHidden importantForAccessibility="no" style={{ color, fontSize: 22, fontWeight: '700' }}>{symbol}</Text>;
 }
 
