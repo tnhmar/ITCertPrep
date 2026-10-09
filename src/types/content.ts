@@ -6,3 +6,8 @@ export interface ContentQuestion { id: string; topicId: string; sectionId: strin
 export interface ContentSection { id: string; title: string }
 export interface ContentTopic { id: string; title: string; sections: ContentSection[] }
 export interface CategoryContent { schemaVersion: number; category: { id: string; title: string; contentVersion: number }; topics: ContentTopic[]; questions: ContentQuestion[] }
+export interface DbQuestion extends Omit<ContentQuestion, 'options' | 'correctAnswer'> {
+  categoryId: string;
+  options: ContentOption[];
+  correctAnswer: Answer;
+}

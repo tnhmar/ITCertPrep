@@ -1,7 +1,7 @@
 import { scoreSummary, shuffleQuestions, isCorrect } from './quizService';
-import type { DbQuestion } from '../../db/content';
+import type { DbQuestion, Answer } from '../../types/content';
 
-const question = (id: string, correctAnswer: boolean | string): DbQuestion => ({
+const question = (id: string, correctAnswer: Answer): DbQuestion => ({
   id,
   categoryId: 'demo',
   topicId: 'topic',
@@ -17,12 +17,13 @@ const question = (id: string, correctAnswer: boolean | string): DbQuestion => ({
 describe('quiz service', () => {
   it('scores correct, incorrect and unanswered questions', () => {
     const questions = [question('q1', true), question('q2', 'a'), question('q3', false)];
-    const result = scoreSummary(questions, new Map([['q1', true], ['q2', 'b']]));
+    const answers = new Map<string, Answer>([['q1', true], ['q2', 'b']]);
+    const result = scoreSummary(questions, answers);
     expect(result).toEqual({ total: 3, correct: 1, incorrect: 2, percent: 33 });
   });
 
   it('returns zero score for an empty quiz', () => {
-    expect(scoreSummary([], new Map())).toEqual({ total: 0, correct: 0, incorrect: 0, percent: 0 });
+    expect(scoreSummary([], new Map<string, Answer>())).toEqual({ total: 0, correct: 0, incorrect: 0, percent: 0 });
   });
 
   it('recognizes both boolean and option-id answers', () => {
