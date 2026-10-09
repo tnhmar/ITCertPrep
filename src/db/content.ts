@@ -56,4 +56,10 @@ export async function recordAnswer(db: any, questionId: string, correct: boolean
 export async function toggleBookmark(db: any, questionId: string): Promise<void> {
  await db.runAsync('INSERT INTO question_progress(question_id,bookmarked) VALUES(?,1) ON CONFLICT(question_id) DO UPDATE SET bookmarked=1-bookmarked', questionId);
 }
-export interface DbQuestion extends Omit<ContentQuestion,'options'|'correctAnswer'> { categoryId:string; options:ContentQuestion['options']; correctAnswer:ContentQuestion['correctAnswer'] }
+export async function createQuizSession(db: any, input: { id: string; origin: string; questions: Array<{ id: string; answer: boolean | string; correct: boolean }> }): Promise<void> {
+  const correct = input.questions.filter(q => q.correct).length;
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('INSERT INTO quiz_sessions(id,origin,total,correct,created_at) VALUES(?,?,?,?,?)', input.id, input.origin, input.questions.length, correct, new Date().toISOString());
+    for (const q of input.questions) await db.runAsync('INSERT INTO quiz_session_answers(session_id,question_id,answer_json,is_correct) VALUES(?,?,?,?)', input.id, q.id, JSON.stringify(q.answer), q.correct ? 1 : 0);
+  });
+}
