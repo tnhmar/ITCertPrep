@@ -31,8 +31,7 @@ export function validateCategoryContent(value: unknown): ValidationResult {
     const path = `topics[${ti}]`;
     if (!isRecord(raw)) { issue(path, 'Expected a topic object.'); return; }
     if (!validId(raw.id)) issue(`${path}.id`, 'Must be a valid non-empty ID.');
-    else if (topicIds.has(raw.id)) issue(`${path}.id`, `Duplicate topic ID “${raw.id}”.`);
-    else topicIds.add(raw.id);
+    else if (typeof raw.id === 'string') { if (topicIds.has(raw.id)) issue(`${path}.id`, `Duplicate topic ID “${raw.id}”.`); else topicIds.add(raw.id); }
     if (typeof raw.title !== 'string' || !raw.title.trim()) issue(`${path}.title`, 'Must be a non-empty string.');
     if (!Array.isArray(raw.sections)) { issue(`${path}.sections`, 'Expected an array.'); return; }
     const localSections = new Set<string>();
@@ -40,8 +39,10 @@ export function validateCategoryContent(value: unknown): ValidationResult {
       const sp = `${path}.sections[${si}]`;
       if (!isRecord(section)) { issue(sp, 'Expected a section object.'); return; }
       if (!validId(section.id)) issue(`${sp}.id`, 'Must be a valid non-empty ID.');
-      else if (localSections.has(section.id)) issue(`${sp}.id`, `Duplicate section ID “${section.id}” within the topic.`);
-      else { localSections.add(section.id); topicSections.add(`${String(raw.id)}/${section.id}`); }
+      else if (typeof section.id === 'string') {
+        if (localSections.has(section.id)) issue(`${sp}.id`, `Duplicate section ID “${section.id}” within the topic.`);
+        else { localSections.add(section.id); if (typeof raw.id === 'string') topicSections.add(`${raw.id}/${section.id}`); }
+      }
       if (typeof section.title !== 'string' || !section.title.trim()) issue(`${sp}.title`, 'Must be a non-empty string.');
     });
   });
