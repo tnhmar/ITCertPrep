@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.13.1
       - name: Install dependencies
         run: npm install
       - name: Typecheck
@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.13.1
       - name: Install dependencies
         run: npm install
       - name: Align Expo SDK dependencies
@@ -54,7 +54,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Generate clean Android project with Expo autolinking
+      - name: Generate clean Android project
         run: npx expo prebuild --platform android --clean
       - name: Make gradlew executable
         run: chmod +x android/gradlew
