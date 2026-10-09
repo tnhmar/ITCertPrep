@@ -1,48 +1,24 @@
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Button, Card, Page, Title, colors, styles } from '../../components/ui';
 import { clearBookmarks, getContentVersions, resetStudyHistory, type ContentVersion } from '../../features/progress/progressRepository';
+import { categoryExists, replaceCategory, validateCategoryContent, type ImportIssue } from '../../features/content/importCategory';
 
-export default function SettingsScreen() {
-  const db = useSQLiteContext();
-  const [versions, setVersions] = React.useState<ContentVersion[]>([]);
-  const [busy, setBusy] = React.useState(false);
-  const [message, setMessage] = React.useState<string | null>(null);
-  useFocusEffect(React.useCallback(() => {
-    let active = true;
-    getContentVersions(db).then(value => { if (active) setVersions(value); })
-      .catch(() => { if (active) setMessage('Unable to load content versions.'); });
-    return () => { active = false; };
-  }, [db]));
-  async function manageData(action: 'history' | 'bookmarks') {
-    setBusy(true);
-    try {
-      if (action === 'history') await resetStudyHistory(db);
-      else await clearBookmarks(db);
-      setMessage(action === 'history' ? 'Study history reset. Your bookmarks and question bank are unchanged.' : 'Bookmarks cleared. Your study history and question bank are unchanged.');
-    } catch {
-      Alert.alert('Unable to update data', 'Your data could not be updated. Please try again.');
-    } finally { setBusy(false); }
-  }
-  function confirmReset() {
-    Alert.alert('Reset study history?', 'This permanently clears question attempts, accuracy, and completed quiz results on this device. It keeps your bookmarks and bundled question bank.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Reset history', style: 'destructive', onPress: () => { void manageData('history'); } }]);
-  }
-  function confirmClearBookmarks() {
-    Alert.alert('Clear all bookmarks?', 'This removes all saved question bookmarks on this device. Your study history and question bank are kept.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Clear bookmarks', style: 'destructive', onPress: () => { void manageData('bookmarks'); } }]);
-  }
-  return <Page><ScrollView showsVerticalScrollIndicator={false}>
-    <Title sub="Manage this device’s study data and view the bundled content.">Settings</Title>
-    <Card><Text style={local.heading}>Offline study</Text><Text style={local.detail}>Questions, progress, bookmarks, and completed quiz results are stored locally. No account or backend is required for normal use.</Text><Text style={local.detail}>Uninstalling the app can remove this device’s saved data. New bundled questions arrive through an app update.</Text></Card>
-    <Text style={[styles.label, local.section]}>Question bank</Text>
-    {versions.map(category => <Card key={category.id}><Text style={local.heading}>{category.title}</Text><Text style={local.detail}>{category.count} questions · Content version {category.content_version}</Text></Card>)}
-    <Text style={[styles.label, local.section]}>Local data</Text>
-    <Card><Text style={local.heading}>Reset study history</Text><Text style={local.detail}>Clear attempts and completed quiz results. Keep bookmarks and question content.</Text><Button title={busy ? 'Updating…' : 'Reset study history'} disabled={busy} onPress={confirmReset} /></Card>
-    <Card><Text style={local.heading}>Clear bookmarks</Text><Text style={local.detail}>Remove saved questions without changing attempts or quiz history.</Text><Button title="Clear all bookmarks" disabled={busy} onPress={confirmClearBookmarks} /></Card>
-    {message ? <Text accessibilityLiveRegion="polite" style={local.message}>{message}</Text> : null}
-    <Text style={local.footer}>ITCertPrep · Your study data stays on this device.</Text>
-  </ScrollView></Page>;
+export default function SettingsScreen(){
+ const db=useSQLiteContext();
+ const [versions,setVersions]=React.useState<ContentVersion[]>([]);
+ const [busy,setBusy]=React.useState(false);
+ const [message,setMessage]=React.useState<string|null>(null);
+ useFocusEffect(React.useCallback(()=>{let active=true;getContentVersions(db).then(v=>{if(active)setVersions(v);}).catch(()=>{if(active)setMessage('Unable to load content versions.');});return()=>{active=false;};},[db]));
+ async function manageData(action:'history'|'bookmarks'){setBusy(true);try{if(action==='history')await resetStudyHistory(db);else await clearBookmarks(db);setMessage(action==='history'?'Study history reset. Your bookmarks and question bank are unchanged.':'Bookmarks cleared. Your study history and question bank are unchanged.');}catch{Alert.alert('Unable to update data','Your data could not be updated. Please try again.');}finally{setBusy(false);}}
+ function confirmReset(){Alert.alert('Reset study history?','This permanently clears question attempts and completed quiz results on this device. Bookmarks and question content are kept.',[{text:'Cancel',style:'cancel'},{text:'Reset history',style:'destructive',onPress:()=>{void manageData('history');}}]);}
+ function confirmClearBookmarks(){Alert.alert('Clear all bookmarks?','This removes saved bookmarks only. Your study history and questions are kept.',[{text:'Cancel',style:'cancel'},{text:'Clear bookmarks',style:'destructive',onPress:()=>{void manageData('bookmarks');}}]);}
+ function showIssues(issues:ImportIssue[]){const lines=issues.slice(0,20).map(i=>`${i.path}: ${i.message}`);if(issues.length>20)lines.push(`…and ${issues.length-20} more validation errors.`);Alert.alert('JSON validation failed',lines.join('\n'));}
+ async function chooseFile(){setBusy(true);setMessage(null);try{const result=await DocumentPicker.getDocumentAsync({type:['application/json','text/json','text/plain'],copyToCacheDirectory:true,multiple:false});if(result.canceled||!result.assets.length)return;const asset=result.assets[0];const text=await new File(asset.uri).text();let raw:unknown;try{raw=JSON.parse(text);}catch(e){Alert.alert('Invalid JSON syntax',`${asset.name}\n${e instanceof Error?e.message:String(e)}`);return;}const validation=validateCategoryContent(raw);if(!validation.ok){showIssues(validation.issues);return;}const category=validation.content.category;const exists=await categoryExists(db,category.id);const summary=`${category.title}\nID: ${category.id}\nTopics: ${validation.content.topics.length}\nQuestions: ${validation.content.questions.length}\nContent version: ${category.contentVersion}`;const runImport=async()=>{setBusy(true);try{const outcome=await replaceCategory(db,validation.content);setVersions(await getContentVersions(db));const msg=exists?`Replaced category. Preserved progress/bookmarks for ${outcome.preservedProgress} matching question IDs; removed progress for ${outcome.removedProgress} deleted questions. Completed quiz history remains.`:`Added category with ${validation.content.questions.length} questions.`;setMessage(msg);Alert.alert(exists?'Category replaced':'Category imported',msg);}catch(e){Alert.alert('Import failed',e instanceof Error?e.message:String(e));}finally{setBusy(false);}};Alert.alert(exists?'Replace existing category?':'Add new category?',exists?`${summary}\n\nThe entire category will be replaced. Other categories and completed quiz records remain. Progress and bookmarks are retained for matching question IDs.`:`${summary}\n\nThis adds a category and does not change other categories.`,[{text:'Cancel',style:'cancel'},{text:exists?'Replace category':'Import category',style:exists?'destructive':'default',onPress:()=>{void runImport();}}]);}catch(e){Alert.alert('Unable to read file',e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
+ return <Page><ScrollView showsVerticalScrollIndicator={false}><Title sub="Import a complete category and manage study data stored on this device.">Settings</Title><Card><Text style={local.heading}>Import category JSON</Text><Text style={local.detail}>Choose one JSON file for an entire category. The app validates it and lists field paths for errors before saving. A new category is added; an existing category ID requires your confirmation before full replacement.</Text><Button title={busy?'Working…':'Choose JSON file'} disabled={busy} onPress={()=>{void chooseFile();}}/></Card><Card><Text style={local.heading}>Offline study</Text><Text style={local.detail}>Questions, progress, bookmarks, and quiz results are stored locally. Imported categories remain after app restarts.</Text></Card><Text style={[styles.label,local.section]}>Question bank</Text>{versions.map(v=><Card key={v.id}><Text style={local.heading}>{v.title}</Text><Text style={local.detail}>{v.count} questions · Content version {v.content_version}</Text></Card>)}<Text style={[styles.label,local.section]}>Local data</Text><Card><Text style={local.heading}>Reset study history</Text><Text style={local.detail}>Clear attempts and completed quiz results. Keep bookmarks and question content.</Text><Button title={busy?'Updating…':'Reset study history'} disabled={busy} onPress={confirmReset}/></Card><Card><Text style={local.heading}>Clear bookmarks</Text><Text style={local.detail}>Remove saved questions without changing attempts or quiz history.</Text><Button title="Clear all bookmarks" disabled={busy} onPress={confirmClearBookmarks}/></Card>{message?<Text accessibilityLiveRegion="polite" style={local.message}>{message}</Text>:null}<Text style={local.footer}>ITCertPrep · Your study data stays on this device.</Text></ScrollView></Page>;
 }
-
-const local = StyleSheet.create({ heading: { fontSize: 17, fontWeight: '700', color: colors.ink }, detail: { fontSize: 14, lineHeight: 22, color: colors.muted, marginTop: 7 }, section: { marginTop: 12, marginBottom: 12 }, message: { color: colors.green, fontSize: 14, lineHeight: 21, marginVertical: 10 }, footer: { color: colors.muted, fontSize: 12, lineHeight: 19, marginTop: 12 } });
+const local=StyleSheet.create({heading:{fontSize:17,fontWeight:'700',color:colors.ink},detail:{fontSize:14,lineHeight:22,color:colors.muted,marginTop:7},section:{marginTop:12,marginBottom:12},message:{color:colors.green,fontSize:14,lineHeight:21,marginVertical:10},footer:{color:colors.muted,fontSize:12,lineHeight:19,marginTop:12}});
