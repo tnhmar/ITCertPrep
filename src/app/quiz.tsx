@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useSQLiteContext, type SQLiteBindValue } from 'expo-sqlite';
 import { Button, Card, Page, Title, colors } from '../components/ui';
 import { recordAnswer, createQuizSession, toggleBookmark } from '../db/content';
 import type { DbQuestion, Answer as AnswerValue, ContentOption } from '../types/content';
@@ -21,7 +21,7 @@ export default function QuizScreen() {
     let active = true;
     (async () => {
       const where: string[] = [];
-      const args: unknown[] = [];
+      const args: SQLiteBindValue[] = [];
       if (params.categoryId) { where.push('q.category_id=?'); args.push(params.categoryId); }
       if (params.topicId) { where.push('q.topic_id=?'); args.push(params.topicId); }
       if (params.sectionId) { where.push('q.section_id=?'); args.push(params.sectionId); }
