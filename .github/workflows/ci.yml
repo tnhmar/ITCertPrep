@@ -54,8 +54,8 @@ jobs:
         run: npx expo install --fix
         env:
           CI: 1
-      - name: Generate Android project
-        run: npx expo prebuild --platform android --no-install
+      - name: Generate clean Android project with Expo autolinking
+        run: npx expo prebuild --platform android --clean
       - name: Make gradlew executable
         run: chmod +x android/gradlew
       - name: Build release APK
