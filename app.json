@@ -1,1 +1,18 @@
-{"expo":{"name":"ITCertPrep","slug":"itcertprep","scheme":"itcertprep","version":"1.0.0","orientation":"portrait","userInterfaceStyle":"automatic","newArchEnabled":true,"plugins":["expo-router",["expo-sqlite",{"enableFTS":false}]],"experiments":{"typedRoutes":true},"ios":{"supportsTablet":true},"android":{"package":"com.tnhmar.itcertprep"}}
+{
+  "expo": {
+    "name": "ITCertPrep",
+    "slug": "itcertprep",
+    "scheme": "itcertprep",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      ["expo-sqlite", {"enableFTS": false}]
+    ],
+    "experiments": {"typedRoutes": true},
+    "ios": {"supportsTablet": true},
+    "android": {"package": "com.tnhmar.itcertprep"}
+  }
+}
