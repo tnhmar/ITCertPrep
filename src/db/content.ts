@@ -1,8 +1,12 @@
 import { CategoryContent, ContentQuestion } from '../types/content';
-import agenticAi from '../content/agentic-ai.json';
-import cloud from '../content/cloud.json';
-import javaSpring from '../content/java-spring.json';
-import architecture from '../content/architecture.json';
+import agenticAiJson from '../content/agentic-ai.json';
+import cloudJson from '../content/cloud.json';
+import javaSpringJson from '../content/java-spring.json';
+import architectureJson from '../content/architecture.json';
+const agenticAi = agenticAiJson as CategoryContent;
+const cloud = cloudJson as CategoryContent;
+const javaSpring = javaSpringJson as CategoryContent;
+const architecture = architectureJson as CategoryContent;
 export const CONTENT: CategoryContent[] = [cloud, javaSpring, architecture, agenticAi];
 export function validateContent(content: CategoryContent): void {
   if (content.schemaVersion !== 1 || !content.category?.id || !content.category.title) throw new Error('Unsupported or invalid category content');
