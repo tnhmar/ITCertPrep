@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "category": { "id": "example-category", "title": "Example Category", "contentVersion": 1 },
+  "topics": [{ "id": "example-topic", "title": "Example Topic", "sections": [{ "id": "example-section", "title": "Example Section" }] }],
+  "questions": [
+    { "id": "example-001", "topicId": "example-topic", "sectionId": "example-section", "type": "single-choice", "prompt": "Which answer is correct?", "options": [{ "id": "a", "text": "Correct answer" }, { "id": "b", "text": "Another answer" }], "correctAnswer": "a", "explanation": "Explain why the answer is correct.", "difficulty": "beginner", "source": "https://example.com/reference" },
+    { "id": "example-002", "topicId": "example-topic", "sectionId": "example-section", "type": "true-false", "prompt": "A true-or-false statement.", "options": [], "correctAnswer": true, "explanation": "Explain the answer.", "difficulty": "beginner", "source": "https://example.com/reference" }
+  ]
+}
